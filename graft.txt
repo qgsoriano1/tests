@@ -1,4 +1,31 @@
 - name:
+  hosts: telegraf
+  remote_user: centos
+  become: yes
+  tasks:
+  - name: Setting up Telegraf repo for Centos
+    ansible.builtin.copy:
+      dest: /etc/yum.repos.d/influxdb.repo
+      content: |
+              [influxdb]
+              name = InfluxDB Repository - RHEL \$releasever
+              baseurl = https://repos.influxdata.com/rhel/$releasever/$basearch/stable
+              enabled = 1
+              gpgcheck = 1
+              gpgkey = https://repos.influxdata.com/influxdb.key
+  - name: Installing software
+    ansible.builtin.dnf:
+      name:
+         - telegraf
+         - vim
+      state: latest
+  - name: Starting Telegraf
+    ansible.builtin.systemd:
+        name: telegraf
+        enabled: yes
+        state: reloaded
+
+- name:
   hosts: influxdb
   remote_user: centos
   become: yes
