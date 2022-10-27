@@ -1,0 +1,51 @@
+- name:
+  hosts: influxdb
+  remote_user: centos
+  become: yes
+  environment:
+     http_proxy: 'http://xx.xx.xx.xx:8000'
+     https_proxy: 'http://xx.xx.xx.xx:8000'
+  tasks:
+  - name: Downloading RPM
+    ansible.builtin.get_url:
+     url: "https://dl.influxdata.com/influxdb/releases/influxdb2-2.0.3.x86_64.rpm"
+     dest: /tmp
+     use_proxy: yes
+  - name: installing software
+    ansible.builtin.dnf:
+     name: /tmp/influxdb2-2.0.3.x86_64.rpm
+     state: present
+  - name: Starting influxdb
+    ansible.builtin.systemd:
+      name: influxdb
+      enabled: yes
+      state: restarted
+
+
+- name:
+  hosts: grafana
+  remote_user: centos
+  become: yes
+  tasks:
+  - name: Setting up Influxdb repo for Centos
+    ansible.builtin.copy:
+      dest: /etc/yum.repos.d/influxdb.repo
+      content: |
+              [grafana]
+              name = grafana
+              baseurl = https://packages.grafana.com/oss/rpm
+              enabled = 1
+              gpgcheck = 1
+              gpgkey = https://packages.grafana.com/gpg.key
+              sslverify=1
+              sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+  - name: Installing software
+    ansible.builtin.dnf:
+      name:
+       - grafana
+       - vim
+  - name: Starting grafana
+    ansible.builtin.systemd:
+      name: grafana-server
+      enabled: yes
+      state: restarted
